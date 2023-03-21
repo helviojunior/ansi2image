@@ -391,6 +391,10 @@ class Ansi2Image(object):
         self.lines = stream.readlines()
 
     @classmethod
+    def get_default_font_name(cls):
+        return cls.font_name
+
+    @classmethod
     def textlength(cls, font: FreeTypeFont):
         img = Image.new("RGB", (100, 100), (0, 0, 0))
         img1 = ImageDraw.Draw(img)
