@@ -56,14 +56,6 @@ class Arguments(object):
                            dest=f'font',
                            help=Color.s('font type. (default: {G}JetBrains Mono Regular{W}).'))
 
-        flags.add_argument('--format',
-                           action='store',
-                           metavar='[format]',
-                           type=str,
-                           default='png',
-                           dest=f'format',
-                           help=Color.s('output format. (default: {G}png{W}).'))
-
         flags.add_argument('--font-list',
                            action='store_true',
                            default=False,

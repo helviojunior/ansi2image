@@ -134,12 +134,14 @@ class Configuration(object):
                 Logger.pl('{!} {R}Error: could not openfile {W}\r\n')
                 sys.exit(1)
 
-        if args.args.format is None or args.args.format.strip().lower() not in _FORMATS:
-            Logger.pl('{!} {R}error: invalid format {O}%s{R}. Supported formats: {G}%s{W}\r\n' % (
-                args.args.format, ', '.join(_FORMATS)))
+        fmt = Path(Configuration.out_file).suffix.strip('. ').lower()
+
+        if fmt is None or fmt not in _FORMATS:
+            Logger.pl('{!} {R}error: invalid image format {O}%s{R}. Supported formats: {G}%s{W}\r\n' % (
+                fmt, ', '.join(_FORMATS)))
             exit(1)
 
-        Configuration.format = args.args.format.strip().lower()
+        Configuration.format = fmt.lower()
         if Configuration.format == 'jpg':
             Configuration.format = 'jpeg'
 
