@@ -47,6 +47,7 @@ tmtagsHistory
 build
 dist
 *.egg-info
+ansi2image/requirements.txt
 
 # Other sources #
 #################

@@ -16,6 +16,7 @@ git commit -m "Update build version"
 '''
 
 import os
+import shutil
 import sys
 
 from setuptools import setup, find_packages
@@ -26,7 +27,10 @@ here = os.path.abspath(os.path.dirname(__file__))
 with open(f"{here}/ansi2image/__meta__.py") as f:
     exec(f.read(), meta)
 
-with open(f"{here}/requirements.txt", "r", encoding="utf-8") as f:
+if not os.path.isfile(f"{here}/ansi2image/requirements.txt"):
+    shutil.copyfile(f"{here}/requirements.txt", f"{here}/ansi2image/requirements.txt")
+
+with open(f"{here}/ansi2image/requirements.txt", "r", encoding="utf-8") as f:
     requires = f.read().splitlines()
     if not requires:
         print("Unable to read requirements from the requirements.txt file"
@@ -37,7 +41,7 @@ with open(f"{here}/README.md", "r", encoding="utf-8") as f:
     readme = f.read()
 
 # Find package Data
-package_data = {"": ["LICENSE", "requirements.txt"]}
+package_data = {"": ["LICENSE"]}
 package_data.update(
     {
         dp.replace(here.strip('/') + '/', '').lstrip('/. ').replace('\\', '/').replace('/', '.'): [
