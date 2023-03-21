@@ -44,6 +44,13 @@ if os.path.isdir(f"{here}/ansi2image/fonts"):
         if '.py' not in f.lower()
     ]
 
+if os.path.isdir(f"{here}/ansi2image/libs"):
+    bin_files += [
+        os.path.join(dp, f).replace(here.strip('/') + '/', '').lstrip('/. ')
+        for dp, dn, filenames in os.walk(f"{here}/ansi2image/libs") for f in filenames
+        if '.py' not in f.lower()
+    ]
+
 #If you use both include_package_data and package_data, files specified with package_data will not be automatically included in sdists; you must instead list them in your MANIFEST.in
 
 setup(
