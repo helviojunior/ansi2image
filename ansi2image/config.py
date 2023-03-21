@@ -14,13 +14,8 @@ from .libs.color import Color
 from .libs.logger import Logger
 from .__meta__ import __version__, __description__
 
-try:
-    from pygments.styles import get_style_by_name
-except (ValueError, ImportError) as e:
-    Logger.pl('{!} {R}Error: library {O}pygments{R} not found{W}\n     Install with {O}pip3 install Pygments{W} command.')
-    sys.exit(3)
-
 _FORMATS = ['jpg', 'jpeg', 'png']
+
 
 class Configuration(object):
     ''' Stores configuration variables and functions for Tfileindexer. '''
