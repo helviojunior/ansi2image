@@ -1,16 +1,11 @@
 #!/usr/bin/python3
 # -*- coding: UTF-8 -*-
-import curses
 import datetime
 import io
 import json
 import re
-import codecs
-import fileinput
-from typing import Iterator, Union, List, Optional, TypeVar, Tuple
-from io import BytesIO
-from typing.io import TextIO
-from PIL import Image, ImageDraw, ImageFont
+from typing import Iterator, Union, List, Optional, Tuple
+from PIL import Image, ImageDraw
 
 from .fonts.truetypefont import TrueTypeFont
 from .libs.logger import Logger
@@ -294,12 +289,6 @@ class Ansi2Image(object):
         Ansi2Image.background_color = _BACKGROUND_COLOR
         Ansi2Image.foreground_color = _FOREGROUND_COLOR
 
-        try:
-            print(curses.window.getbkgd())
-            self.background_color = curses.window.getbkgd()
-        except:
-
-            pass
 
     @classmethod
     def escape_ansi(cls, line):
