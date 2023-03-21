@@ -25,15 +25,16 @@ pip3 install --upgrade ansi2image
 ## Help
 
 ```bash
-ansi2image -h
-
+ANSI to image v0.1.1 by Helvio Junior
+ANSI to Image convert ANSI text to an image.
+https://github.com/helviojunior/ansi2image
+    
 positional arguments:
   [filename]             File path or - to stdin
 
 Options:
   -o--output [filename]  image output file.
   --font [font]          font type. (default: JetBrains Mono Regular).
-  --format [format]      output format. (default: png).
   --font-list            List all supported font family and variations
   -h, --help             show help message and exit
   -v                     Specify verbosity level (default: 0). Example: -v, -vv, -vvv

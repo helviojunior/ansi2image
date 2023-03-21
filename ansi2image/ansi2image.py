@@ -454,9 +454,9 @@ class Ansi2Image(object):
             f.write(self.generate_image(format=format))
 
 def run():
-    Configuration.initialize()
 
     Color.pl(Configuration.get_banner())
+    Configuration.initialize()
 
     o = Ansi2Image(Configuration.size[0], Configuration.size[1], font_name=Configuration.font.name, font_size=13)
 
