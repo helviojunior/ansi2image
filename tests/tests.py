@@ -1,22 +1,36 @@
 #reference: https://medium.com/assertqualityassurance/tutorial-de-pytest-para-iniciantes-cbdd81c6d761
 import codecs
+import datetime
 
 import pytest, sys
+import io
 
 from ansi2image.ansi2image import Ansi2Image
+from ansi2image.config import Configuration
 from ansi2image.libs.color import Color
+from ansi2image.libs.logger import Logger
 
 
 def test_read_file():
-    sys.argv = ['ansi2image', 'ansi2image.py']
-    if sys.stdout.encoding is None:
-        # Output is redirected to a file
-        sys.stdout = codecs.getwriter('latin-1')(sys.stdout)
+    sys.argv = ['ansi2image', '-', '-o', '/tmp/teste.png']
+    Configuration.initialize()
+
+    Color.pl(Configuration.get_banner())
+
+    o = Ansi2Image(Configuration.size[0], Configuration.size[1], font_name=Configuration.font.name, font_size=13)
+
+    timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    Logger.pl('{+} {C}Start time {O}%s{W}' % timestamp)
 
     try:
 
-        o = Ansi2Image()
-        o.main()
+        if Configuration.filename == '-':
+            o.load(io.TextIOWrapper(sys.stdin.buffer, encoding='utf-8'))
+        else:
+            o.load_from_file(Configuration.filename)
+
+        o.calc_size()
+        o.save_image(Configuration.out_file, format=Configuration.format)
 
         assert True
         #sys.exit(0)
