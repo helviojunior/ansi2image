@@ -390,6 +390,9 @@ class Ansi2Image(object):
     def load(self, stream: io.TextIOWrapper):
         self.lines = stream.readlines()
 
+    def loads(self, text: str):
+        self.lines = text.replace('\r', '').split('\n')
+
     @classmethod
     def get_default_font_name(cls):
         return cls.font_name
@@ -404,6 +407,9 @@ class Ansi2Image(object):
         return w, h
 
     def calc_size(self, width: bool = True, height: bool = True) -> None:
+        if len(self.lines) == 0:
+            raise Exception('Data is empty')
+
         max_width = max(len(self.escape_ansi(l).strip('\n ')) for l in self.lines)
 
         fnt = TrueTypeFont(name=self.font_name, size=self.font_size)
@@ -415,6 +421,8 @@ class Ansi2Image(object):
             self.height = ((len(self.lines) * h) + self.margin * 2)
 
     def generate_image(self, format: str = 'png') -> bytes:
+        if len(self.lines) == 0:
+            raise Exception('Data is empty')
 
         #print(Ansi2Image.escape_ansi(''.join(self.lines)))
         #Color.p(''.join(lines), out=sys.stdout)
