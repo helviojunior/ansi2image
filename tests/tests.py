@@ -12,7 +12,7 @@ from ansi2image.libs.logger import Logger
 
 
 def test_read_file():
-    sys.argv = ['ansi2image', 'setup.py', '-o', '/tmp/teste.png']
+    sys.argv = ['ansi2image', 'setup.py', '-o', 'teste.png']
     Configuration.initialize()
 
     Color.pl(Configuration.get_banner())
