@@ -6,6 +6,7 @@ import json
 import re
 from typing import Iterator, Union, List, Optional, Tuple
 from PIL import Image, ImageDraw
+from PIL.ImageFont import FreeTypeFont
 
 from .fonts.truetypefont import TrueTypeFont
 from .libs.logger import Logger
@@ -389,21 +390,25 @@ class Ansi2Image(object):
     def load(self, stream: io.TextIOWrapper):
         self.lines = stream.readlines()
 
+    @classmethod
+    def textlength(cls, font: FreeTypeFont):
+        img = Image.new("RGB", (100, 100), (0, 0, 0))
+        img1 = ImageDraw.Draw(img)
+        (_, _, _, h) = img1.textbbox((0, 0), text='│', font=font, spacing=0)
+        (_, _, w, _) = img1.textbbox((0, 0), text='_', font=font, spacing=0)
+        del img1, img
+        return w, h
+
     def calc_size(self, width: bool = True, height: bool = True) -> None:
         max_width = max(len(self.escape_ansi(l).strip('\n ')) for l in self.lines)
 
-        img = Image.new("RGB", (self.width, self.height), self.background_color)
-        img1 = ImageDraw.Draw(img)
         fnt = TrueTypeFont(name=self.font_name, size=self.font_size)
-        (_, h) = img1.textsize('│', font=fnt.truetype, spacing=0)
-        (w, _) = img1.textsize('_', font=fnt.truetype, spacing=0)
+        (w, h) = self.textlength(fnt.truetype)
 
         if width:
             self.width = ((max_width * w) + self.margin * 2)
         if height:
             self.height = ((len(self.lines) * h) + self.margin * 2)
-
-        del img1, img
 
     def generate_image(self, format: str = 'png') -> bytes:
 
@@ -415,8 +420,7 @@ class Ansi2Image(object):
         img1.fontmode = "RGB"
 
         fnt = TrueTypeFont(name=self.font_name, size=self.font_size)
-        (_, height) = img1.textsize('│', font=fnt.truetype, spacing=0)
-        (width, _) = img1.textsize('_', font=fnt.truetype, spacing=0)
+        (width, height) = self.textlength(fnt.truetype)
 
         y = self.margin
         for line in self.lines:
