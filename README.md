@@ -41,3 +41,7 @@ Options:
   --version              show current version
 
 ```
+
+## ANSI reference
+
+https://en.wikipedia.org/wiki/_ANSI_escape_code
