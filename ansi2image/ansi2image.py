@@ -298,9 +298,9 @@ class Ansi2Image(object):
         return _ANSI_SEQUENCES.sub('', line)
 
     @classmethod
-    def _handle_ansi_code(cls, ansi: str) -> Iterator[TextColor]:
+    def _handle_ansi_code(cls, ansi: str, last_state: TextColor = None) -> Iterator[TextColor]:
         last_end = 0  # the index of the last end of a code we've seen
-        state_color = Ansi2Image.TextColor()
+        state_color = last_state.clone('') if last_state is not None else Ansi2Image.TextColor()
         for match in _ANSI_CODES_PROG.finditer(ansi):
             yield state_color.clone(ansi[last_end:match.start()])
             last_end = match.end()
@@ -412,7 +412,7 @@ class Ansi2Image(object):
         if len(self.lines) == 0:
             raise Exception('Data is empty')
 
-        max_width = max(len(self.escape_ansi(l).strip('\n ')) for l in self.lines)
+        max_width = max(len(self.escape_ansi(l).strip('\n')) for l in self.lines)
 
         fnt = TrueTypeFont(name=self.font_name, size=self.font_size)
         (w, h) = self.textlength(fnt.truetype)
@@ -431,8 +431,6 @@ class Ansi2Image(object):
         if height:
             self.height = ((len(self.lines) * h) + self.margin * 2)
 
-
-
     def generate_image(self, format: str = 'png') -> bytes:
         if len(self.lines) == 0:
             raise Exception('Data is empty')
@@ -448,12 +446,14 @@ class Ansi2Image(object):
         (width, height) = self.textlength(fnt.truetype)
 
         y = self.margin
+        last_line_color = None
         for line in self.lines:
             #print([m for m in Ansi2Image._handle_ansi_code(line.replace('\n', ''))])
             x = self.margin
-            for c in Ansi2Image._handle_ansi_code(line.replace('\n', '')):
+            for c in Ansi2Image._handle_ansi_code(line.replace('\n', ''), last_line_color):
                 img1.text((x, y), text=c.text, font=fnt.truetype, fill=c.foreground_color)
                 x += width * len(c.text)
+                last_line_color = c
             y += int(float(height) * self.line_height)
 
         # Converte para bytes
