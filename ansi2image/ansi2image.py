@@ -149,7 +149,7 @@ class Ansi2Image(object):
     width = 0
     height = 0
     font_size = 20
-    margin = 10
+    margin = 0
     line_height = 1.2
     font_name = 'JetBrains Mono Regular'
     _background_color = None
@@ -406,7 +406,7 @@ class Ansi2Image(object):
         del img1, img
         return w, h
 
-    def calc_size(self, width: bool = True, height: bool = True) -> None:
+    def calc_size(self, width: bool = True, height: bool = True, margin: float = 0.02) -> None:
         if len(self.lines) == 0:
             raise Exception('Data is empty')
 
@@ -415,10 +415,21 @@ class Ansi2Image(object):
         fnt = TrueTypeFont(name=self.font_name, size=self.font_size)
         (w, h) = self.textlength(fnt.truetype)
 
+        if margin > 0:
+            self.margin = int((max_width * w) * margin)
+
+        if self.margin < 0:
+            self.margin = 0
+
+        if self.margin > 50:
+            self.margin = 50
+
         if width:
             self.width = ((max_width * w) + self.margin * 2)
         if height:
             self.height = ((len(self.lines) * h) + self.margin * 2)
+
+
 
     def generate_image(self, format: str = 'png') -> bytes:
         if len(self.lines) == 0:
