@@ -150,6 +150,8 @@ class Ansi2Image(object):
     height = 0
     font_size = 20
     margin = 0
+    min_margin = 0
+    max_margin = 50
     line_height = 1.2
     font_name = 'JetBrains Mono Regular'
     _background_color = None
@@ -418,11 +420,11 @@ class Ansi2Image(object):
         if margin > 0:
             self.margin = int((max_width * w) * margin)
 
-        if self.margin < 0:
-            self.margin = 0
+        if self.margin < self.min_margin:
+            self.margin = self.min_margin
 
-        if self.margin > 50:
-            self.margin = 50
+        if self.margin > self.max_margin:
+            self.margin = self.max_margin
 
         if width:
             self.width = ((max_width * w) + self.margin * 2)
