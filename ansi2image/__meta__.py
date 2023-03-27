@@ -1,5 +1,5 @@
-__version__ = '0.1.1'
-__version_tuple__ = version_tuple = (0, 1, 1)
+__version__ = '0.1.2'
+__version_tuple__ = version_tuple = (0, 1, 2)
 __title__ = "ansi2image"
 __description__ = "ANSI to Image convert ANSI text to an image."
 __url__ = "https://github.com/helviojunior/ansi2image"
