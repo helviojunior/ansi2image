@@ -171,8 +171,8 @@ class Ansi2Image(object):
 
         def __init__(self, text: str = '', foreground=None, background=None):
             self._text = text
-            self._background = background if not None else Ansi2Image._background_color
-            self._foreground = foreground if not None else Ansi2Image._foreground_color
+            self._background = background if background is not None else Ansi2Image._background_color
+            self._foreground = foreground if foreground is not None else Ansi2Image._foreground_color
 
             self.reset()
 
@@ -289,8 +289,10 @@ class Ansi2Image(object):
         self.font_name = font_name
         self.line_height = line_height
 
-        Ansi2Image.background_color = _BACKGROUND_COLOR
-        Ansi2Image.foreground_color = _FOREGROUND_COLOR
+        Ansi2Image._background_color = _BACKGROUND_COLOR
+        Ansi2Image._foreground_color = _FOREGROUND_COLOR
+        self.background_color = _BACKGROUND_COLOR
+        self.foreground_color = _FOREGROUND_COLOR
 
 
     @classmethod
@@ -451,6 +453,12 @@ class Ansi2Image(object):
             #print([m for m in Ansi2Image._handle_ansi_code(line.replace('\n', ''))])
             x = self.margin
             for c in Ansi2Image._handle_ansi_code(line.replace('\n', ''), last_line_color):
+                if c.text and c.background_color is not None:
+                    segment_width = width * len(c.text)
+                    img1.rectangle(
+                        [(x, y), (x + segment_width, y + height - 1)],
+                        fill=c.background_color
+                    )
                 img1.text((x, y), text=c.text, font=fnt.truetype, fill=c.foreground_color)
                 x += width * len(c.text)
                 last_line_color = c
