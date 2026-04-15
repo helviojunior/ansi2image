@@ -49,3 +49,17 @@ def test_read_file():
         Color.pl('\n{!} {R}Exiting{W}\n')
 
         assert False
+
+
+def test_background_color_rendering():
+    o = Ansi2Image(0, 0, font_name=Ansi2Image.get_default_font_name(), font_size=13)
+    o.loads("\x1b[41mA\x1b[0m")
+    o.calc_size(margin=0)
+
+    png = o.generate_image(format='png')
+
+    from PIL import Image
+    img = Image.open(io.BytesIO(png))
+
+    # top-left pixel belongs to first glyph background when margin is zero
+    assert img.getpixel((0, 0)) == (194, 54, 33)
