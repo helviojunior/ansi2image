@@ -403,11 +403,55 @@ class Ansi2Image(object):
 
     @classmethod
     def textlength(cls, font: FreeTypeFont):
-        img = Image.new("RGB", (100, 100), (0, 0, 0))
-        img1 = ImageDraw.Draw(img)
-        (_, _, _, h) = img1.textbbox((0, 0), text='│', font=font, spacing=0)
-        (_, _, w, _) = img1.textbbox((0, 0), text='_', font=font, spacing=0)
-        del img1, img
+        char = chr(0x2588)  # ▓ — solid shade block that fills the monospace cell
+
+        def _rendered_width(text: str):
+            try:
+                (_, _, bb_w, bb_h) = font.getbbox(text)
+                pad = 4
+                cw = max(200, int(bb_w) + pad * 2)
+                ch = max(200, int(bb_h) + pad * 2)
+                im = Image.new("RGB", (cw, ch), (0, 0, 0))
+                d = ImageDraw.Draw(im)
+                d.fontmode = "RGB"
+                try:
+                    d.text((pad, pad), text=text, font=font, fill=(255, 255, 255),
+                       features=['-liga', '-clig', '-calt'])
+                except (KeyError, AttributeError):
+                    # libraqm not available, fall back to basic rendering
+                    d.text((pad, pad), text=text, font=font, fill=(255, 255, 255))
+
+                pixels = im.load()
+                lo, hi = cw, -1
+                for yy in range(ch):
+                    for xx in range(cw):
+                        r, g, b = pixels[xx, yy]
+                        if r or g or b:
+                            if xx < lo: lo = xx
+                            if xx > hi: hi = xx
+                del d, im
+                if hi < 0:
+                    return None
+                return hi - lo + 1
+            except Exception:
+                return None
+
+        # Advance per cell = pixel distance between the first and last glyphs,
+        # divided by the number of gaps. Using a large N averages out per-glyph
+        # pixel-rounding so the result converges to the font's true advance.
+        n = 32
+        w_one = _rendered_width(char)
+        w_many = _rendered_width(char * n)
+        if w_one is not None and w_many is not None and w_many > w_one:
+            advance = float(w_many - w_one) / float(n - 1)
+        else:
+            # Fallback to the font's reported advance width
+            advance = float(font.getlength(char))
+
+        ascent, descent = font.getmetrics()
+
+        w = float(advance)
+        h = float(ascent + descent)
         return w, h
 
     def calc_size(self, width: bool = True, height: bool = True, margin: float = 0.02) -> None:
@@ -420,18 +464,18 @@ class Ansi2Image(object):
         (w, h) = self.textlength(fnt.truetype)
 
         if margin > 0:
-            self.margin = int((max_width * w) * margin)
+            self.margin = float((max_width * w) * margin)
 
         if self.margin < self.min_margin:
-            self.margin = self.min_margin
+            self.margin = float(self.min_margin)
 
         if self.margin > self.max_margin:
-            self.margin = self.max_margin
+            self.margin = float(self.max_margin)
 
         if width:
-            self.width = ((max_width * w) + self.margin * 2)
+            self.width = float((max_width * w) + self.margin * 2.0) + 1.0
         if height:
-            self.height = ((len(self.lines) * h) + self.margin * 2)
+            self.height = float((len(self.lines) * h) + self.margin * 2.0)
 
     def generate_image(self, format: str = 'png') -> bytes:
         if len(self.lines) == 0:
@@ -440,18 +484,18 @@ class Ansi2Image(object):
         #print(Ansi2Image.escape_ansi(''.join(self.lines)))
         #Color.p(''.join(lines), out=sys.stdout)
 
-        img = Image.new("RGB", (self.width, self.height), self.background_color)
+        img = Image.new("RGB", (int(self.width), int(self.height)), self.background_color)
         img1 = ImageDraw.Draw(img)
         img1.fontmode = "RGB"
 
         fnt = TrueTypeFont(name=self.font_name, size=self.font_size)
         (width, height) = self.textlength(fnt.truetype)
 
-        y = self.margin
+        y = float(self.margin)
         last_line_color = None
         for line in self.lines:
             #print([m for m in Ansi2Image._handle_ansi_code(line.replace('\n', ''))])
-            x = self.margin
+            x = float(self.margin)
             for c in Ansi2Image._handle_ansi_code(line.replace('\n', ''), last_line_color):
                 if c.text and c.background_color is not None:
                     segment_width = width * len(c.text)
@@ -459,10 +503,16 @@ class Ansi2Image(object):
                         [(x, y), (x + segment_width, y + height - 1)],
                         fill=c.background_color
                     )
-                img1.text((x, y), text=c.text, font=fnt.truetype, fill=c.foreground_color)
-                x += width * len(c.text)
+                try:
+                    img1.text((x, y), text=c.text, font=fnt.truetype, fill=c.foreground_color,
+                          features=['-liga', '-clig', '-calt'])
+                except (KeyError, AttributeError):
+                    # libraqm not available, fall back to basic rendering
+                    img1.text((x, y), text=c.text, font=fnt.truetype, fill=c.foreground_color)
+
+                x += float(width) * len(c.text)
                 last_line_color = c
-            y += int(float(height) * self.line_height)
+            y += float(height) * float(self.line_height)
 
         # Converte para bytes
         img_byte_arr = io.BytesIO()
