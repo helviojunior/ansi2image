@@ -412,8 +412,13 @@ class Ansi2Image(object):
                 im = Image.new("RGB", (cw, ch), (0, 0, 0))
                 d = ImageDraw.Draw(im)
                 d.fontmode = "RGB"
-                d.text((pad, pad), text=text, font=font, fill=(255, 255, 255),
+                try:
+                    d.text((pad, pad), text=text, font=font, fill=(255, 255, 255),
                        features=['-liga', '-clig', '-calt'])
+                except (KeyError, AttributeError):
+                    # libraqm not available, fall back to basic rendering
+                    d.text((pad, pad), text=text, font=font, fill=(255, 255, 255))
+
                 pixels = im.load()
                 lo, hi = cw, -1
                 for yy in range(ch):
@@ -490,8 +495,13 @@ class Ansi2Image(object):
             #print([m for m in Ansi2Image._handle_ansi_code(line.replace('\n', ''))])
             x = float(self.margin)
             for c in Ansi2Image._handle_ansi_code(line.replace('\n', ''), last_line_color):
-                img1.text((x, y), text=c.text, font=fnt.truetype, fill=c.foreground_color,
+                try:
+                    img1.text((x, y), text=c.text, font=fnt.truetype, fill=c.foreground_color,
                           features=['-liga', '-clig', '-calt'])
+                except (KeyError, AttributeError):
+                    # libraqm not available, fall back to basic rendering
+                    img1.text((x, y), text=c.text, font=fnt.truetype, fill=c.foreground_color)
+
                 x += float(width) * len(c.text)
                 last_line_color = c
             y += float(height) * float(self.line_height)
