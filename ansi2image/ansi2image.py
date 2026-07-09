@@ -67,6 +67,19 @@ _ANSI_TRUECOLOR_ID = 2
 _BACKGROUND_COLOR = (0, 0, 0)
 _FOREGROUND_COLOR = (240, 240, 240)
 
+# Box-drawing characters mapped to their strokes (up, down, left, right).
+# These are rendered as real lines that fill the whole cell so borders stay
+# continuous even with line spacing (glyphs would leave gaps between rows).
+_BOX_DRAWING = {
+    '─': (0, 0, 1, 1), '━': (0, 0, 1, 1),  # ─ ━
+    '│': (1, 1, 0, 0), '┃': (1, 1, 0, 0),  # │ ┃
+    '┌': (0, 1, 0, 1), '┐': (0, 1, 1, 0),  # ┌ ┐
+    '└': (1, 0, 0, 1), '┘': (1, 0, 1, 0),  # └ ┘
+    '├': (1, 1, 0, 1), '┤': (1, 1, 1, 0),  # ├ ┤
+    '┬': (0, 1, 1, 1), '┴': (1, 0, 1, 1),  # ┬ ┴
+    '┼': (1, 1, 1, 1),                          # ┼
+}
+
 #https://en.wikipedia.org/wiki/_ANSI_escape_code#3-bit_and_4-bit
 _ANSI_COLORS = {
     #Black
@@ -480,6 +493,36 @@ class Ansi2Image(object):
             # the bottom border) get clipped when line_height > 1.0
             self.height = float((len(self.lines) * h * self.line_height) + self.margin * 2.0)
 
+    @staticmethod
+    def _draw_box_run(img1, fnt, c, x, y, width, row_h, glyph_h, stroke):
+        # Draw each character of the segment: box-drawing chars become real
+        # lines that fill the cell (so borders stay continuous across rows),
+        # everything else is rendered as normal text.
+        cx = float(x)
+        for ch in c.text:
+            box = _BOX_DRAWING.get(ch)
+            if box is not None:
+                up, down, left, right = box
+                mid_x = cx + width / 2.0
+                mid_y = y + row_h / 2.0
+                half = stroke / 2.0
+                color = c.foreground_color
+                if left or right:
+                    x0 = cx if left else mid_x
+                    x1 = cx + width if right else mid_x
+                    img1.rectangle([(x0, mid_y - half), (x1, mid_y + half)], fill=color)
+                if up or down:
+                    y0 = y if up else mid_y
+                    y1 = y + row_h if down else mid_y
+                    img1.rectangle([(mid_x - half, y0), (mid_x + half, y1)], fill=color)
+            elif ch != ' ':
+                try:
+                    img1.text((cx, y), text=ch, font=fnt.truetype, fill=c.foreground_color,
+                              features=['-liga', '-clig', '-calt'])
+                except (KeyError, AttributeError):
+                    img1.text((cx, y), text=ch, font=fnt.truetype, fill=c.foreground_color)
+            cx += float(width)
+
     def generate_image(self, format: str = 'png') -> bytes:
         if len(self.lines) == 0:
             raise Exception('Data is empty')
@@ -494,6 +537,11 @@ class Ansi2Image(object):
         fnt = TrueTypeFont(name=self.font_name, size=self.font_size)
         (width, height) = self.textlength(fnt.truetype)
 
+        # full vertical pitch of a row (glyph height + line spacing)
+        row_h = float(height) * float(self.line_height)
+        # stroke thickness for the box-drawing lines
+        stroke = max(1, int(round(self.font_size * 0.07)))
+
         y = float(self.margin)
         last_line_color = None
         for line in self.lines:
@@ -502,20 +550,27 @@ class Ansi2Image(object):
             for c in Ansi2Image._handle_ansi_code(line.replace('\n', ''), last_line_color):
                 if c.text and c.background_color is not None:
                     segment_width = width * len(c.text)
+                    # fill the whole row pitch so highlighted bands stay
+                    # continuous when there is line spacing
                     img1.rectangle(
-                        [(x, y), (x + segment_width, y + height - 1)],
+                        [(x, y), (x + segment_width, y + row_h)],
                         fill=c.background_color
                     )
-                try:
-                    img1.text((x, y), text=c.text, font=fnt.truetype, fill=c.foreground_color,
-                          features=['-liga', '-clig', '-calt'])
-                except (KeyError, AttributeError):
-                    # libraqm not available, fall back to basic rendering
-                    img1.text((x, y), text=c.text, font=fnt.truetype, fill=c.foreground_color)
+
+                if c.text and any(ch in _BOX_DRAWING for ch in c.text):
+                    # render box-drawing characters as continuous lines
+                    self._draw_box_run(img1, fnt, c, x, y, width, row_h, height, stroke)
+                else:
+                    try:
+                        img1.text((x, y), text=c.text, font=fnt.truetype, fill=c.foreground_color,
+                              features=['-liga', '-clig', '-calt'])
+                    except (KeyError, AttributeError):
+                        # libraqm not available, fall back to basic rendering
+                        img1.text((x, y), text=c.text, font=fnt.truetype, fill=c.foreground_color)
 
                 x += float(width) * len(c.text)
                 last_line_color = c
-            y += float(height) * float(self.line_height)
+            y += row_h
 
         # Converte para bytes
         img_byte_arr = io.BytesIO()
