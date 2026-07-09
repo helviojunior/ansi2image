@@ -197,9 +197,12 @@ class Ansi2Image(object):
 
         @property
         def background_color(self) -> Tuple[int]:
+            # faint/dim (intensity) only affects the ink of the glyph, never
+            # the cell fill; applying it to the background turned black into
+            # gray and produced spurious background bands
             if self._negative == _ANSI_NEGATIVE_ON:
-                return self._intensity_color(self._foreground_color)
-            return self._intensity_color(self._background_color)
+                return self._foreground_color
+            return self._background_color
 
         @property
         def foreground_color(self) -> Tuple[int]:
