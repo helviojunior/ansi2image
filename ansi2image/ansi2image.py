@@ -475,7 +475,10 @@ class Ansi2Image(object):
         if width:
             self.width = float((max_width * w) + self.margin * 2.0) + 1.0
         if height:
-            self.height = float((len(self.lines) * h) + self.margin * 2.0)
+            # each line advances by h * line_height in generate_image, so the
+            # total height must account for line_height or the last rows (and
+            # the bottom border) get clipped when line_height > 1.0
+            self.height = float((len(self.lines) * h * self.line_height) + self.margin * 2.0)
 
     def generate_image(self, format: str = 'png') -> bytes:
         if len(self.lines) == 0:
